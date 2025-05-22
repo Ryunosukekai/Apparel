@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株式会社Galante - Apparel BOOSTER ご紹介</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices: 
+        - サービス概要: 特徴(リスト)。フォロワー効果(バーチャート)。売上向上メカニズム(インタラクティブ図)。AIキャッチコピー(Gemini API)。
+        - 導入フロー: 主要ステップをアイコン付きで表示し、クリックで詳細を展開するインタラクティブフロー図(HTML/CSS/JS Goal: Organize/Inform)。KGI/KPI設定(テキスト、KGI達成イメージグラフ Chart.js線グラフ Goal: Change)。
+        - 成功事例: 各事例カード。主要KPI(小さなバーチャート Goal: Inform/Compare)。詳細はモーダル。
+        - 料金プラン: 表形式(Goal: Compare)。
+        - 会社概要: テキスト。
+        インタラクションはナビゲーション、アコーディオン/モーダル、インタラクティブ図、AI生成。NO SVG/Mermaid。
+    -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6; /* Light Gray Background */
+        }
+        .section-title {
+            font-size: 2.25rem; /* 36px */
+            font-weight: 700;
+            color: #1F2937; /* Dark Gray */
+            margin-bottom: 2rem; /* 32px */
+            text-align: center;
+        }
+        .sub-section-title {
+            font-size: 1.875rem; /* 30px */
+            font-weight: 600;
+            color: #111827; /* Slightly Lighter Dark Gray */
+            margin-top: 2.5rem; /* 40px */
+            margin-bottom: 1.5rem; /* 24px */
+            text-align: center;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem; /* 12px */
+            padding: 1.5rem; /* 24px */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .nav-link {
+            padding: 0.5rem 1rem;
+            color: #4B5563; /* Medium Gray */
+            font-weight: 500;
+            border-radius: 0.375rem; /* 6px */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #3B82F6; /* Blue */
+            color: #FFFFFF;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .modal {
+            display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 0.5rem;
+        }
+        .close-button {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold;
+        }
+        .close-button:hover, .close-button:focus {
+            color: black; text-decoration: none; cursor: pointer;
+        }
+        .process-step, .flow-element { /* For existing diagrams */
+            border: 2px solid #DBEAFE; padding: 0.75rem; border-radius: 0.5rem; text-align: center;
+            background-color: #EFF6FF; cursor: pointer; transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .process-step:hover, .flow-element:hover {
+            background-color: #DBEAFE; border-color: #BFDBFE;
+        }
+        .arrow { /* For existing diagrams and new flow */
+            font-size: 1.5rem; color: #60A5FA; margin: 0 0.5rem;
+        }
+        .detail-box { /* For existing diagrams and new flow */
+            display: none; margin-top: 0.5rem; padding: 0.75rem; background-color: #F9FAFB; 
+            border-radius: 0.375rem; border: 1px solid #E5E7EB; font-size: 0.875rem; color: #4B5563;
+            max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out;
+        }
+        .detail-box.open {
+            display: block;
+            max-height: 500px; /* Adjust as needed */
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .gemini-feature-card {
+            background-color: #E0F2FE; /* Light Sky Blue */
+            border-left: 4px solid #0EA5E9; /* Sky Blue */
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); width: 24px; height: 24px; border-radius: 50%;
+            border-left-color: #3B82F6; animation: spin 1s ease infinite; display: none; margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .flow-step-card {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: box-shadow 0.3s ease;
+        }
+        .flow-step-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .flow-step-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .flow-step-icon {
+            font-size: 1.5rem; /* 24px */
+            margin-right: 0.75rem; /* 12px */
+            color: #3B82F6; /* Blue */
+        }
+        .flow-step-title {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600;
+            color: #1F2937;
+        }
+        .flow-arrow-horizontal {
+            display: none; /* Hidden on mobile */
+        }
+        .flow-arrow-vertical {
+            text-align: center;
+            margin: 0.5rem 0;
+            font-size: 1.5rem;
+            color: #9CA3AF; /* Gray */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .flow-arrow-vertical { display: none; }
+            .flow-arrow-horizontal { display: block; text-align: center; margin: 0 1rem; font-size: 2rem; color: #9CA3AF; }
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-xl font-bold text-blue-600">Apparel BOOSTER</a>
+            <div class="hidden md:flex space-x-4">
+                <a href="#service-overview" class="nav-link">サービス概要</a>
+                <a href="#flow" class="nav-link">導入フロー</a>
+                <a href="#case-studies" class="nav-link">成功事例</a>
+                <a href="#pricing" class="nav-link">料金プラン</a>
+                <a href="#company" class="nav-link">会社概要</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
+            <a href="#service-overview" class="block nav-link text-center py-2">サービス概要</a>
+            <a href="#flow" class="block nav-link text-center py-2">導入フロー</a>
+            <a href="#case-studies" class="block nav-link text-center py-2">成功事例</a>
+            <a href="#pricing" class="block nav-link text-center py-2">料金プラン</a>
+            <a href="#company" class="block nav-link text-center py-2">会社概要</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="service-overview" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">サービス概要</h2>
+            <p class="text-center text-gray-700 mb-10 max-w-3xl mx-auto">Apparel BOOSTERは、株式会社Galanteが提供する「“売上にコミット”するアパレル特化のインフルエンサーマーケティングサービス」です。従来の認知獲得やエンゲージメント向上に加え、アクセス数、売上、ファン獲得、ROAS最適化といった、より直接的に売上に繋がる指標を重視します。</p>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3">売上UPへのコミット</h3>
+                    <p class="text-gray-600 text-sm">購買に繋がりやすいインフルエンサーをアサインし、詳細なレポーティングとPDCAサイクルにより、最短3ヶ月で最適なマーケティングを実現します。</p>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3">ブランド力の蓄積</h3>
+                    <p class="text-gray-600 text-sm">単なる購買促進だけでなく、購買行動を通じてブランド力を高めます。自社Instagramアカウントのフォロワーを増やし、中長期的なオーガニック購買へ繋げます。</p>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3">月間平均アサイン数1000名</h3>
+                    <p class="text-gray-600 text-sm">総リーチ約1億人の豊富なキャスティング実績。30種類以上のジャンル分けとインフルエンサーの特性分析に基づいた提案を行います。</p>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3">フィード+ストーリーズ セット</h3>
+                    <p class="text-gray-600 text-sm">追加料金なしでInstagramのフィード投稿とストーリーズ投稿をセットで提供し、コストメリットに貢献します。</p>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3">インサイトデータ蓄積</h3>
+                    <p class="text-gray-600 text-sm">非公開の多いインフルエンサー投稿の詳細データを収集・分析し、データに基づいた効果測定と施策効果の最大化を図ります。</p>
+                </div>
+                 <div class="card lg:col-span-3">
+                    <h3 class="text-xl font-semibold text-blue-600 mb-3 text-center">アパレルブランドへの効果</h3>
+                    <p class="text-gray-600 text-sm text-center">SNSは消費者の購買行動に大きな影響を与えます。特に20代女性の約6割がInstagramを参考にし、「共感する人」のコーディネートを参考に商品を購入する傾向があります。</p>
+                </div>
+            </div>
+            
+            <div class="card gemini-feature-card my-12">
+                <h3 class="text-xl font-semibold text-sky-700 mb-4 text-center">✨ AIキャッチコピー生成ツール</h3>
+                <p class="text-sm text-sky-600 mb-6 text-center">あなたのブランドにぴったりのキャッチコピーをAIが提案します。インフルエンサーへの依頼時やSNS投稿の参考にどうぞ。</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="brandTarget" class="block text-sm font-medium text-gray-700">ブランドのターゲット層 (例: 20代後半の働く女性)</label>
+                        <input type="text" id="brandTarget" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="例: 20代後半の働く女性、アクティブな男性">
+                    </div>
+                    <div>
+                        <label for="brandFeatures" class="block text-sm font-medium text-gray-700">ブランドの特徴・強み (例: 高品質な素材、サステナブル)</label>
+                        <textarea id="brandFeatures" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="例: 高品質な日本製素材、環境に配慮したサステナブルな製法、ユニークなデザイン"></textarea>
+                    </div>
+                    <div>
+                        <label for="desiredTone" class="block text-sm font-medium text-gray-700">希望するトーン (例: 親しみやすい、高級感のある)</label>
+                        <input type="text" id="desiredTone" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="例: 親しみやすい、クール、エレガント、高級感">
+                    </div>
+                    <button id="generateCatchphraseButton" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out flex items-center justify-center">
+                        <span id="buttonText">キャッチコピーを生成する ✨</span>
+                        <div id="loadingSpinner" class="spinner ml-2"></div>
+                    </button>
+                </div>
+                <div id="catchphraseResult" class="mt-6 space-y-3"></div>
+                 <p id="geminiError" class="text-sm text-red-600 mt-4 hidden"></p>
+            </div>
+
+            <div class="card mb-12">
+                <h3 class="text-xl font-semibold text-blue-600 mb-4 text-center">POINT 2: ブランド力の蓄積価値</h3>
+                <p class="text-gray-700 mb-6 text-center">自社Instagramアカウントのフォロワー数が増えることで、ブランド自身の発信力（メディアとしての価値）が高まり、広告効果の最大化に繋がります。</p>
+                <div class="chart-container h-64 md:h-80">
+                    <canvas id="brandValueChart"></canvas>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">※インスタグラム広告の平均CPM0.5～1.0円にて試算した広告効果換算</p>
+            </div>
+
+            <div id="sales-mechanism" class="mt-12">
+                <h3 class="sub-section-title">売上向上のメカニズム</h3>
+                <p class="text-center text-gray-700 mb-8 max-w-2xl mx-auto">インフルエンサーマーケティングがどのようにして実際の売上に結びつくのか、その具体的なプロセスと経路を解説します。</p>
+                <div class="card mb-8">
+                    <h4 class="text-lg font-semibold text-blue-700 mb-4">1. 消費者の購買行動プロセス</h4>
+                    <p class="text-sm text-gray-600 mb-4">インフルエンサーの投稿は、消費者の購買ジャーニーの各段階に影響を与えます。各ステップをタップして詳細を確認してください。</p>
+                    <div class="flex flex-wrap items-center justify-center gap-y-4">
+                        <div class="process-step" data-detail="detail-認知">認知</div>
+                        <span class="arrow">&rarr;</span>
+                        <div class="process-step" data-detail="detail-興味">興味・関心 (いいね!)</div>
+                        <span class="arrow">&rarr;</span>
+                        <div class="process-step" data-detail="detail-検索">検索</div>
+                        <span class="arrow">&rarr;</span>
+                        <div class="process-step" data-detail="detail-購買">購買</div>
+                        <span class="arrow">&rarr;</span>
+                        <div class="process-step" data-detail="detail-共有">共有</div>
+                    </div>
+                    <div id="detail-認知" class="detail-box">好きなインフルエンサーが商品を投稿することで、まず消費者に商品やブランドが「認知」されます。これが最初の接点です。</div>
+                    <div id="detail-興味" class="detail-box">投稿内容に魅力を感じたり、インフルエンサーへの共感から、消費者は「いいね！」や保存といったアクションを起こし、「興味・関心」を示します。</div>
+                    <div id="detail-検索" class="detail-box">より詳しい情報を求めて、Instagram内でブランド名を検索したり、GoogleやYahoo!などの検索エンジンで商品名や関連キーワードを「検索」します。</div>
+                    <div id="detail-購買" class="detail-box">検索結果や公式サイト、ECモールなどで商品情報を確認し、納得すれば「購買」に至ります。インフルエンサーの信頼感が後押しとなることもあります。</div>
+                    <div id="detail-共有" class="detail-box">商品に満足した消費者は、自身のSNSアカウントで感想や写真を「共有」(UGC: User Generated Content)することがあり、これが新たな認知拡大に繋がります。</div>
+                </div>
+                <div class="card mb-8">
+                    <h4 class="text-lg font-semibold text-blue-700 mb-4">2. Instagram投稿からの集客経路</h4>
+                    <p class="text-sm text-gray-600 mb-4">インフルエンサーの投稿は、複数の経路でブランドの販売チャネルへと消費者を誘導します。要素をタップして詳細を確認してください。</p>
+                    <div class="grid md:grid-cols-3 gap-4 items-start">
+                        <div class="flow-element col-span-3 md:col-span-1" data-detail="detail-投稿起点">インフルエンサー投稿<br>(フィード/ストーリーズ)</div>
+                        <div class="flex flex-col items-center md:col-span-2">
+                            <div class="flex items-center mb-2">
+                                <span class="arrow transform rotate-90 md:rotate-0">&rarr;</span>
+                                <div class="flow-element" data-detail="detail-公式アカウント">公式アカウントへ<br>(リーチ数の約1.5%)</div>
+                            </div>
+                            <div class="detail-box w-full" id="detail-公式アカウント">インフルエンサーの投稿にタグ付けされた公式アカウントへ遷移します。ここからブランドの世界観を深く知ることができます。</div>
+                            <div class="flex items-center mt-4 mb-2">
+                                <span class="arrow transform rotate-90 md:rotate-0">&rarr;</span>
+                                <div class="flow-element" data-detail="detail-検索エンジン">検索エンジンへ<br>(リーチ数の約1.0%)</div>
+                            </div>
+                            <div class="detail-box w-full" id="detail-検索エンジン">商品名やブランド名でGoogleなどで検索する行動です。より能動的な情報収集段階と言えます。</div>
+                        </div>
+                    </div>
+                     <div class="detail-box w-full mt-4" id="detail-投稿起点">インフルエンサーによる魅力的な商品紹介投稿が起点となります。フィード投稿で世界観を伝え、ストーリーズ投稿でタイムリーな情報や直接的なリンク誘導を行います。</div>
+                </div>
+                 <div class="card">
+                    <h4 class="text-lg font-semibold text-blue-700 mb-4">3. 指名検索の波及効果</h4>
+                    <p class="text-sm text-gray-600 mb-2">インフルエンサーマーケティングは、ブランドの認知度を向上させ、Googleなどの検索エンジンでの「指名検索（ブランド名や商品名での直接検索）」を増加させます。</p>
+                    <p class="text-sm text-gray-600">この指名検索の増加は、楽天市場やZOZOTOWNといった大手ECモール内でのブランド検索数増加にも繋がる傾向があります。ユーザーは普段利用している安心感のあるモールで商品を再検索し、購入に至ることが多いためです。結果として、モール内広告の効果向上やレビュー増加といった副次的効果も期待できます。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="flow" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">導入フロー</h2>
+            <p class="text-center text-gray-700 mb-10 max-w-3xl mx-auto">Apparel BOOSTERの導入は、クライアント様の状況を丁寧にヒアリングし、目標設定から施策実行、効果測定、改善提案までを一貫してサポートします。各ステップをタップすると詳細が表示されます。</p>
+            
+            <div class="space-y-6" id="interactive-flow-container">
+                </div>
+
+            <div class="card mt-12">
+                <h3 class="text-xl font-semibold text-blue-600 mb-4 text-center">KGI/KPI設定と達成イメージ</h3>
+                <p class="text-gray-700 mb-6 text-center">キックオフミーティングでブランド概況や目標を共有し、具体的なKGI/KPIを設定。月次で進捗を報告し、目標達成を目指します。</p>
+                <div class="chart-container h-64 md:h-80">
+                    <canvas id="kpiAchievementChart"></canvas>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">※フォロワー数推移の目標達成イメージグラフ</p>
+            </div>
+        </section>
+
+        <section id="case-studies" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">成功事例</h2>
+            <p class="text-center text-gray-700 mb-10 max-w-3xl mx-auto">Apparel BOOSTERを活用いただいたクライアント様の成功事例をご紹介します。様々なジャンルのアパレルブランドで、売上向上やブランド力強化に貢献しています。</p>
+            <div class="grid md:grid-cols-2 gap-8"></div>
+        </section>
+        
+        <div id="caseStudyModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeModal()">&times;</span>
+                <h3 id="modalTitle" class="text-2xl font-bold text-blue-700 mb-4"></h3>
+                <div id="modalBody" class="text-gray-700 space-y-3 text-sm"></div>
+            </div>
+        </div>
+
+        <section id="pricing" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">料金プラン</h2>
+            <p class="text-center text-gray-700 mb-10 max-w-3xl mx-auto">クライアント様のニーズとご予算に合わせた柔軟なプランをご用意しています。全てのプランでKGI/KPI設計からレポーティングまで一貫してサポートいたします。</p>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white shadow-md rounded-lg">
+                    <thead class="bg-blue-600 text-white">
+                        <tr>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">プラン名</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">月額料金</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">目安リーチ数</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">フォロワー単価目安</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">投稿管理</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">主な内容</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700">
+                        <tr>
+                            <td class="text-left py-3 px-4">Plan A</td>
+                            <td class="text-left py-3 px-4">100万円</td>
+                            <td class="text-left py-3 px-4">66万リーチ</td>
+                            <td class="text-left py-3 px-4">1.5円</td>
+                            <td class="text-left py-3 px-4">フィード</td>
+                            <td class="text-left py-3 px-4 text-xs">KGI/KPI設計、事前準備フォロー、キャスティング、レポート/分析</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="text-left py-3 px-4">Plan B</td>
+                            <td class="text-left py-3 px-4">300万円</td>
+                            <td class="text-left py-3 px-4">250万リーチ</td>
+                            <td class="text-left py-3 px-4">1.2円</td>
+                            <td class="text-left py-3 px-4">フィード+ストーリーズ</td>
+                            <td class="text-left py-3 px-4 text-xs">KGI/KPI設計、事前準備フォロー、キャスティング、レポート/分析</td>
+                        </tr>
+                        <tr>
+                            <td class="text-left py-3 px-4">Plan C</td>
+                            <td class="text-left py-3 px-4">1,000万円</td>
+                            <td class="text-left py-3 px-4">1,000万リーチ</td>
+                            <td class="text-left py-3 px-4">1.0円</td>
+                            <td class="text-left py-3 px-4">フィード+ストーリーズ</td>
+                            <td class="text-left py-3 px-4 text-xs">KGI/KPI設計、事前準備フォロー、キャスティング、レポート/分析</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="company" class="scroll-mt-20">
+            <h2 class="section-title">会社概要</h2>
+            <div class="card max-w-2xl mx-auto">
+                <ul class="text-gray-700 space-y-2">
+                    <li><span class="font-semibold">会社名:</span> 株式会社 Galante</li>
+                    <li><span class="font-semibold">代表取締役:</span> 甲斐 龍之介 (かい りゅうのすけ)</li>
+                    <li><span class="font-semibold">所在地:</span> 〒150-0013 東京都渋谷区恵比寿3-15-6 501</li>
+                    <li><span class="font-semibold">事業内容:</span> SNS/インフルエンサーマーケティング事業, デジタルマーケティング, タレントキャスティング事業, クリエイティブ制作, イベント企画・運営, Eコマースサイト運営, 商品企画・開発, 広告代理事業 他</li>
+                    <li class="pt-4 text-center text-blue-600 font-semibold">― 最高の心遣いを ―</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center p-6 mt-16">
+        <p>&copy; 2021-2024 株式会社 Galante. All Rights Reserved.</p>
+        <p class="text-xs mt-1">このページは株式会社Galanteの「Apparel BOOSTER」紹介資料を基に作成されました。</p>
+    </footer>
+
+    <script>
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                mobileMenu.classList.add('hidden');
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                    if (!this.classList.contains('block')) {
+                         this.classList.add('active');
+                    }
+                }
+            });
+        });
+
+        const brandValueCtx = document.getElementById('brandValueChart').getContext('2d');
+        new Chart(brandValueCtx, {
+            type: 'bar',
+            data: {
+                labels: ['フォロワー10万人時', 'フォロワー30万人時'],
+                datasets: [{
+                    label: '想定インプレッション数',
+                    data: [10000000, 32000000],
+                    backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(29, 78, 216, 0.6)'],
+                    borderColor: ['rgba(59, 130, 246, 1)', 'rgba(29, 78, 216, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value / 1000000 + 'M'; } } } },
+                plugins: { title: { display: true, text: 'フォロワー数別 期待効果 (インプレッション)', padding: { top: 10, bottom: 10 }, font: { size: 16 } }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('ja-JP').format(context.parsed.y); } return label; } } } }
+            }
+        });
+
+        const kpiCtx = document.getElementById('kpiAchievementChart').getContext('2d');
+        new Chart(kpiCtx, {
+            type: 'line',
+            data: {
+                labels: ['開始', '3ヶ月目', '6ヶ月目', '9ヶ月目', '12ヶ月目'],
+                datasets: [{
+                    label: '目標フォロワー数 (KGI)', data: [10000, 150000, 300000, 450000, 600000],
+                    borderColor: 'rgba(239, 68, 68, 0.8)', backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.1, pointRadius: 4, pointBackgroundColor: 'rgba(239, 68, 68, 1)'
+                }, {
+                    label: '実績フォロワー数', data: [10000, 160000, 320000, 480000, 650000],
+                    borderColor: 'rgba(59, 130, 246, 0.8)', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1, pointRadius: 4, pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return new Intl.NumberFormat('ja-JP').format(value); } } } },
+                plugins: { title: { display: true, text: 'フォロワー数推移とKGI達成イメージ', padding: { top: 10, bottom: 10 }, font: { size: 16 } }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('ja-JP').format(context.parsed.y) + '人'; } return label; } } } }
+            }
+        });
+        
+        const flowStepsData = [
+            { icon: '📝', title: 'ヒアリング＆現状分析', details: 'クライアント様の状況、課題、目標をヒアリング。独自のチェックシート（38項目以上）で現状を詳細に分析し、ブランド概況、事業計画、マーケティング目標を共有。アカウント状況（投稿数、フォロワー数、UGCなど）を評価し、取り組むべき適切なフェーズを判断します。' },
+            { icon: '🎯', title: 'KGI/KPI設定＆戦略プランニング', details: '分析結果に基づき、具体的なKGI/KPI（例：フォロワー数X万人達成、ROAS XXX%達成）を設定。SNSトレンドを踏まえ、ターゲットに合わせたインフルエンサーの方向性定義、投稿テーマ、頻度、トンマナなどを企画し、最適なインフルエンサーマーケティング戦略を立案します。' },
+            { icon: '🧑‍🤝‍🧑', title: 'インフルエンサーキャスティング', details: '約2,000名以上のネットワークと詳細データ（フォロワー属性、エンゲージメント等）から、ブランドと戦略に最適なインフルエンサーを選定・提案。50種類以上のインフルエンサーグループから選定し、リーチ単価1～2円目標でのアサインを目指し、クライアント様へリスト提出と確認を行います。' },
+            { icon: '🚀', title: 'SNSプロモーション実施＆投稿管理', details: '選定されたインフルエンサーによる投稿（フィード、ストーリーズ、リール、ライブ等）を実施。インフルエンサーへの商品発送手配、投稿下書きの回収・確認、最適なタイミングでの配信ディレクションと完了確認まで一貫して管理します。' },
+            { icon: '📊', title: '効果測定＆レポーティング＆PDCA', details: '投稿ごとのインサイトデータや売上への影響を細かく分析。KPI進捗率、各投稿効果を分析し、次月に向けた改善ポイントを洗い出します。月次で改善案を含むレポートを提出し、クライアント様との定例ミーティングで共有。PDCAサイクルを回して効果を最大化します。' }
+        ];
+
+        const flowContainer = document.getElementById('interactive-flow-container');
+        flowStepsData.forEach((step, index) => {
+            const stepElement = document.createElement('div');
+            stepElement.innerHTML = `
+                <div class="flow-step-card" data-flow-detail-id="flow-detail-${index}">
+                    <div class="flow-step-header">
+                        <div class="flex items-center">
+                            <span class="flow-step-icon">${step.icon}</span>
+                            <h4 class="flow-step-title">${index + 1}. ${step.title}</h4>
+                        </div>
+                        <span class="text-blue-500 text-xl transform transition-transform duration-300">&#x25BC;</span>
+                    </div>
+                </div>
+                <div id="flow-detail-${index}" class="detail-box p-4 bg-gray-50 rounded-b-md text-sm text-gray-700">
+                    ${step.details}
+                </div>
+            `;
+            flowContainer.appendChild(stepElement);
+
+            if (index < flowStepsData.length - 1) {
+                const arrowElement = document.createElement('div');
+                arrowElement.className = 'flow-arrow-vertical md:hidden';
+                arrowElement.innerHTML = '&#x2193;'; // Down arrow for mobile
+                flowContainer.appendChild(arrowElement);
+            }
+        });
+        
+        document.querySelectorAll('.flow-step-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const detailId = card.getAttribute('data-flow-detail-id');
+                const detailElement = document.getElementById(detailId);
+                const arrowIcon = card.querySelector('.text-blue-500');
+                
+                if (detailElement.classList.contains('open')) {
+                    detailElement.classList.remove('open');
+                    arrowIcon.style.transform = 'rotate(0deg)';
+                } else {
+                    // Close other open detail boxes
+                    document.querySelectorAll('.detail-box.open').forEach(openBox => {
+                        openBox.classList.remove('open');
+                        const openCardArrow = openBox.previousElementSibling.querySelector('.text-blue-500');
+                        if(openCardArrow) openCardArrow.style.transform = 'rotate(0deg)';
+                    });
+                    detailElement.classList.add('open');
+                    arrowIcon.style.transform = 'rotate(180deg)';
+                }
+            });
+        });
+
+
+        const caseStudiesData = [
+            { id: 'case1', title: 'ECレディースアパレル', period: '3週間', casting: '103名、約1,078万リーチ', engagementRate: '3.31%', followersAdded: '7,000人増', objective: 'モール内での売上拡大 (ROAS 400%目標)', method: '1. 延べ100名以上、1,000万フォロワー超分のインスタグラマーを起用\n2. パワー系の著名人インフルエンサーの起用\n3. インスタグラムの利用率の高い週末を中心に投稿をコントロール(毎週末300万リーチを投下)\n4. 各インフルエンサー、ストーリーズ投稿も握り、フィード投稿+ストーリーズ投稿で実施', result: 'ROAS 715%達成', successPoint: 'フィード投稿+ストーリーズ投稿を行ったことで、実施期間の3週間、毎日インフルエンサーの投稿がされている状態を作ることができた。', kpiValue: 715, kpiLabel: 'ROAS (%)' },
+            { id: 'case2', title: 'ユニセックスアパレル', period: '1ヶ月間', casting: '24名、約310万リーチ', engagementRate: '9.38%', followersAdded: '5,100人増', objective: 'SNSを使った10代~20代前半の認知度を獲得、ファン(フォロワー数)を増やして自社アカウントの発信力UP', method: '1. パワー系の著名人インフルエンサーの起用\n2. ハイエンドの奇抜なファッション投稿をしているインフルエンサーの起用\n3. 投稿を男性と女性に分け、フォロワー増加率が良いのかABテストを実施', result: 'フォロワー5,100人獲得、TwitterでもUGCが発生', successPoint: '著名人を活用することでTwitter上でのバズを生み出し、副次効果での認知拡大もできた。', kpiValue: 5100, kpiLabel: 'フォロワー増加数 (人)' },
+            { id: 'case3', title: 'レディースインナー', period: '2018年7月~現在 (長期)', casting: 'パワーインフルエンサー20名以上/月、ナノマイクロインフルエンサー30名以上/月、約200万リーチ/月', engagementRate: 'N/A', followersAdded: '72,000人増 (アカウント成長)', objective: '自社の発信力の強化、自社ECサイトの開設と売上の拡大', method: '1. 定期キャンペーンの実施による認知度の拡大\n2. ナノマイクロインフルエンサーの大量起用', result: '72,000人フォロワーのアカウントに成長、自社ECサイトの月間数百万PVのサイトに成長', successPoint: 'ナノマイクロインフルエンサーを大量に起用することで、毎日Instagram内でブランドの商品が投稿されている状態と創出出来たこと。', kpiValue: 72000, kpiLabel: '総フォロワー増加数 (人)' },
+            { id: 'case4', title: 'キッズアパレル', period: '1ヶ月間', casting: 'ママ系インフルエンサー11名、約57.8万リーチ', engagementRate: '2.31%', followersAdded: 'N/A', objective: '海外有名ブランドの子供服が、特別にライセンスを持つクライアントサイトならお得に買えることを広める', method: '1. ママ系インフルエンサーを起用し、共感を生む投稿をディレクション\n2. 期間限定のキャンペーンを告知しユーザーの興味喚起を実施', result: 'サイトへの流入数が前月比150%増', successPoint: 'キャンペーン時期に合わせてインフルエンサーに一斉に投稿させることで、フォロワーのフィードの一時的な占有率の獲得。', kpiValue: 150, kpiLabel: 'サイト流入増 (%)' }
+        ];
+
+        const caseStudiesContainer = document.querySelector('#case-studies .grid');
+        const modal = document.getElementById('caseStudyModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        caseStudiesData.forEach(study => {
+            const card = document.createElement('div');
+            card.className = 'card cursor-pointer';
+            card.innerHTML = `
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">${study.title}</h3>
+                <p class="text-sm text-gray-500 mb-1">期間: ${study.period}</p>
+                <p class="text-sm text-gray-500 mb-3">主な成果: ${study.result.split(',')[0]}</p>
+                <div class="h-20 mb-3 chart-container-small">
+                     <canvas id="chart-${study.id}"></canvas>
+                </div>
+                <button onclick="openModal('${study.id}')" class="mt-2 text-sm text-blue-500 hover:text-blue-700 font-medium">詳細を見る &rarr;</button>
+            `;
+            caseStudiesContainer.appendChild(card);
+            
+            const smallChartCtx = document.getElementById(`chart-${study.id}`).getContext('2d');
+            new Chart(smallChartCtx, {
+                type: 'bar', data: { labels: [study.kpiLabel], datasets: [{ label: study.kpiLabel, data: [study.kpiValue], backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } }, plugins: { legend: { display: false }, title: {display: false} } }
+            });
+        });
+        
+        window.openModal = function(studyId) {
+            const study = caseStudiesData.find(s => s.id === studyId);
+            if (study) {
+                modalTitle.textContent = study.title;
+                modalBody.innerHTML = `
+                    <p><strong>期間:</strong> ${study.period}</p>
+                    <p><strong>キャスティング:</strong> ${study.casting}</p>
+                    <p><strong>エンゲージメント率:</strong> ${study.engagementRate}</p>
+                    <p><strong>フォロワー増加数:</strong> ${study.followersAdded}</p>
+                    <p><strong>施策の目的:</strong> ${study.objective}</p>
+                    <p><strong>運用方法:</strong></p>
+                    <ul class="list-disc list-inside ml-4">${study.method.split('\n').map(item => `<li>${item.substring(item.indexOf('.') + 2)}</li>`).join('')}</ul>
+                    <p><strong>施策の結果:</strong> ${study.result}</p>
+                    <p><strong>運用の成功点:</strong> ${study.successPoint}</p>
+                    <div class="mt-4 h-48 chart-container-modal">
+                        <canvas id="modal-chart-${study.id}"></canvas>
+                    </div>
+                `;
+                modal.style.display = "block";
+                const modalChartCtx = document.getElementById(`modal-chart-${study.id}`).getContext('2d');
+                new Chart(modalChartCtx, {
+                    type: 'bar', data: { labels: [study.kpiLabel], datasets: [{ label: study.kpiLabel, data: [study.kpiValue], backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: true, position: 'top' }, title: { display: true, text: '主要KPI' } } }
+                });
+            }
+        }
+        window.closeModal = function() { modal.style.display = "none"; modalBody.innerHTML = ''; }
+        window.onclick = function(event) { if (event.target == modal) { closeModal(); } }
+
+        document.querySelectorAll('.process-step, .flow-element').forEach(element => {
+            element.addEventListener('click', () => {
+                const detailId = element.getAttribute('data-detail');
+                const detailElement = document.getElementById(detailId); // Correctly get the detail element
+                
+                // Toggle display for the clicked element's detail box
+                if (detailElement) { // Check if detailElement is found
+                    if (detailElement.classList.contains('open')) {
+                        detailElement.classList.remove('open');
+                    } else {
+                        // Optionally close others first
+                        document.querySelectorAll('.detail-box.open').forEach(openBox => {
+                           if(openBox !== detailElement) openBox.classList.remove('open');
+                        });
+                        detailElement.classList.add('open');
+                    }
+                }
+            });
+        });
+
+
+        const generateButton = document.getElementById('generateCatchphraseButton');
+        const brandTargetInput = document.getElementById('brandTarget');
+        const brandFeaturesInput = document.getElementById('brandFeatures');
+        const desiredToneInput = document.getElementById('desiredTone');
+        const resultDiv = document.getElementById('catchphraseResult');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const buttonText = document.getElementById('buttonText');
+        const geminiErrorDiv = document.getElementById('geminiError');
+
+        generateButton.addEventListener('click', async () => {
+            const target = brandTargetInput.value.trim();
+            const features = brandFeaturesInput.value.trim();
+            const tone = desiredToneInput.value.trim();
+
+            if (!target || !features) {
+                geminiErrorDiv.textContent = 'ターゲット層とブランドの特徴は必須入力です。';
+                geminiErrorDiv.classList.remove('hidden');
+                return;
+            }
+            geminiErrorDiv.classList.add('hidden');
+            resultDiv.innerHTML = '';
+            loadingSpinner.style.display = 'inline-block';
+            buttonText.textContent = '生成中...';
+            generateButton.disabled = true;
+
+            const prompt = `あなたはプロのコピーライターです。以下のアパレルブランドの情報を元に、魅力的で記憶に残るキャッチコピーを5つ提案してください。各キャッチコピーは簡潔で、ターゲット層に響くように工夫してください。
+
+ブランドのターゲット層: ${target}
+ブランドの特徴・強み: ${features}
+希望するトーン: ${tone || '指定なし'}
+
+提案するキャッチコピーは、それぞれ独立した行に記述してください。`;
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('API Error Data:', errorData);
+                    throw new Error(`APIからの応答エラー: ${response.status} ${response.statusText}. ${errorData?.error?.message || ''}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    const catchphrases = text.split('\n').filter(cp => cp.trim() !== '');
+                    
+                    if (catchphrases.length > 0) {
+                        const list = document.createElement('ul');
+                        list.className = 'list-disc list-inside space-y-2 text-gray-700';
+                        catchphrases.forEach(cp => {
+                            const listItem = document.createElement('li');
+                            listItem.textContent = cp.replace(/^- /, '').trim();
+                            list.appendChild(listItem);
+                        });
+                        resultDiv.appendChild(list);
+                    } else {
+                        resultDiv.textContent = 'AIがキャッチコピーを生成できませんでした。入力内容を変えてお試しください。';
+                    }
+                } else {
+                    console.error('Unexpected API response structure:', result);
+                    resultDiv.textContent = 'AIからの応答が予期しない形式でした。';
+                }
+            } catch (error) {
+                console.error('キャッチコピー生成エラー:', error);
+                geminiErrorDiv.textContent = `エラーが発生しました: ${error.message}。しばらくしてから再度お試しください。`;
+                geminiErrorDiv.classList.remove('hidden');
+                resultDiv.textContent = 'キャッチコピーの生成に失敗しました。';
+            } finally {
+                loadingSpinner.style.display = 'none';
+                buttonText.textContent = 'キャッチコピーを生成する ✨';
+                generateButton.disabled = false;
+            }
+        });
+
+    </script>
+</body>
+</html>
